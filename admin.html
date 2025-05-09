@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>لوحة تحكم المشرف</title>
+  <style>
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: Arial, sans-serif; background: #f8f8f8; }
+    #main-content { display: none; }
+    header img { width: 100%; display:block; }
+    nav { background: #003366; text-align:center; padding:15px; }
+    nav a { color:#fff; margin:0 15px; text-decoration:none; font-size:18px; }
+    h2 { margin:20px auto 10px; text-align:center; color:#333; }
+    .container { max-width:1000px; margin:auto; padding:20px; }
+    table { width:100%; border-collapse: collapse; margin-bottom:30px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+    th { background:#003366; color:#fff; }
+    button { padding:6px 12px; margin:2px; border:none; border-radius:4px; cursor:pointer; }
+    .btn-add { background:#25d366; color:#fff; }
+    .btn-edit { background:#ffc107; color:#000; }
+    .btn-del  { background:#dc3545; color:#fff; }
+    .form-group { margin-bottom:15px; }
+    .form-group label { display:block; margin-bottom:5px; }
+    .form-group input, .form-group textarea { width:100%; padding:8px; }
+  </style>
+</head>
+<body>
+<script>
+  // Password protection
+  var pwd = prompt("الرجاء إدخال كلمة مرور اللوحة:");
+  if (pwd !== "1234Azerazer$") {
+    alert("كلمة المرور غير صحيحة!");
+    window.location.href = "index.html";
+  } else {
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("main-content").style.display = "block";
+    });
+  }
+</script>
+
+<div id="main-content">
+  <header>
+    <img src="data:image/jpeg;base64,..." alt="Banner"/>
+  </header>
+  <nav>
+    <a href="index.html">الرئيسية</a>
+    <a href="orders.html">الطلبات</a>
+    <a href="contact.html">التواصل</a>
+    <a href="admin.html">لوحة التحكم</a>
+  </nav>
+  <div class="container">
+    <h2>إدارة الطلبات</h2>
+    <table id="ordersTable">
+      <thead>
+        <tr><th>#</th><th>المنتج</th><th>السعر</th><th>الكمية</th><th>واتساب</th><th>الحالة</th></tr>
+      </thead><tbody></tbody>
+    </table>
+    <h2>إدارة المنتجات</h2>
+    <form id="productForm">
+      <input type="hidden" id="prodIndex" value="-1"/>
+      <div class="form-group">
+        <label for="prodName">اسم المنتج</label>
+        <input type="text" id="prodName" required/>
+      </div>
+      <div class="form-group">
+        <label for="prodPrice">السعر</label>
+        <input type="number" id="prodPrice" required/>
+      </div>
+      <div class="form-group">
+        <label for="prodImage">رابط صورة (Base64 أو URL)</label>
+        <textarea id="prodImage" rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn-add">إضافة / حفظ</button>
+    </form>
+    <table id="productsTable">
+      <thead>
+        <tr><th>#</th><th>الاسم</th><th>السعر</th><th>الصورة</th><th>إجراءات</th></tr>
+      </thead><tbody></tbody>
+    </table>
+  </div>
+</div>
+<script>
+(function(){
+  function get(key){ return JSON.parse(localStorage.getItem(key)||'[]') }
+  function set(key,v){ localStorage.setItem(key, JSON.stringify(v)) }
+  // Orders
+  var tbl = document.querySelector('#ordersTable tbody');
+  get('orders').forEach(function(o,i){
+    var tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i+1}</td><td>${o.name}</td><td>${o.price}</td><td>${o.quantity||''}</td><td>${o.whatsapp||''}</td><td>${o.status||'قيد المراجعة'}</td>`;
+    tbl.appendChild(tr);
+  });
+  // Products
+  var products = get('products');
+  var pTbl = document.querySelector('#productsTable tbody');
+  function renderProducts(){
+    pTbl.innerHTML = '';
+    products.forEach(function(p,i){
+      var tr = document.createElement('tr');
+      tr.innerHTML = `<td>${i+1}</td><td>${p.name}</td><td>${p.price}</td><td><img src="${p.image}" style="width:60px"/></td>
+      <td><button class="btn-edit" data-i="${i}">تعديل</button><button class="btn-del" data-i="${i}">حذف</button></td>`;
+      pTbl.appendChild(tr);
+    });
+  }
+  renderProducts();
+  document.getElementById('productForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var idx = +document.getElementById('prodIndex').value;
+    var item = { name:document.getElementById('prodName').value, price:document.getElementById('prodPrice').value, image:document.getElementById('prodImage').value };
+    if(idx>=0) products[idx]=item; else products.push(item);
+    set('products',products);
+    this.reset(); document.getElementById('prodIndex').value=-1;
+    renderProducts();
+  });
+  pTbl.addEventListener('click',function(e){
+    var i = e.target.dataset.i;
+    if(e.target.matches('.btn-edit')){
+      document.getElementById('prodName').value = products[i].name;
+      document.getElementById('prodPrice').value = products[i].price;
+      document.getElementById('prodImage').value = products[i].image;
+      document.getElementById('prodIndex').value = i;
+    }
+    if(e.target.matches('.btn-del')){
+      if(confirm('هل تريد حذف هذا المنتج؟')){
+        products.splice(i,1);
+        set('products',products);
+        renderProducts();
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
